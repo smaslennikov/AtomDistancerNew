@@ -13,19 +13,19 @@ import javax.swing.JOptionPane;
 
 public class AtomCalculator {
 	public Interface			swinger;
-	
+
 	private File				pdbFile, lolFile, uplFile, outFile;
-	
+
 	private Scanner				pdbStream, lolStream, uplStream;
 	private PrintWriter			outStream;
-	
+
 	private String[][][]		atoms;
 	private String[][]			lowerLims;
 	private String[][]			upperLims;
 	private ArrayList<String>	output;
-	
+
 	private int					pdbModels;
-	
+
 	public static void main(String[] args) {
 		if (args.length > 0) {
 			for (int i = 0; i < args.length; i++) {
@@ -37,14 +37,14 @@ public class AtomCalculator {
 		}
 		new AtomCalculator();
 	}
-	
+
 	public AtomCalculator() {
 		output = new ArrayList<String>();
-		
+
 		swinger = new Interface(this);
 		swinger.setVisible(true);
 	}
-	
+
 	public void reStream() {
 		try {
 			this.pdbStream = new Scanner(new FileInputStream(pdbFile));
@@ -58,27 +58,27 @@ public class AtomCalculator {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void runCalc(File pdbFile, File lolFile, File uplFile, File outFile) {
 		this.pdbFile = pdbFile;
 		this.lolFile = lolFile;
 		this.uplFile = uplFile;
 		this.outFile = outFile;
-		
+
 		this.reStream();
 		this.calcSizes();
 	}
-	
+
 	public void calcSizes() {
 		String inp;
 		int pdbAtoms = 0;
 		int pdbAtomsFin = 0;
-		
+
 		int lowerLims = 0;
 		int upperLims = 0;
-		
+
 		pdbModels = 0;
-		
+
 		while (pdbStream.hasNext()) {
 			inp = pdbStream.next();
 			if (inp.equals("MODEL")) {
@@ -91,41 +91,41 @@ public class AtomCalculator {
 			}
 			inp = pdbStream.nextLine();
 		}
-		
+
 		System.out.println(">   " + pdbFile.toString() + " has " + pdbModels
 				+ " models and " + pdbAtomsFin + " atoms per model listed.");
-		
+
 		while (lolStream.hasNextLine()) {
 			if (!lolStream.nextLine().substring(0, 1).equals("#")) {
 				lowerLims++;
 			}
 		}
-		
+
 		System.out.println(">   " + lolFile.toString() + " has " + lowerLims
 				+ " lower limit distances for atoms. ");
-		
+
 		while (uplStream.hasNext()) {
 			if (!uplStream.nextLine().substring(0, 1).equals("#")) {
 				upperLims++;
 			}
 		}
-		
+
 		System.out.println(">   " + uplFile.toString() + " has " + upperLims
 				+ " upper limit distances for atoms. ");
-		
+
 		this.atoms = new String[pdbModels][pdbAtomsFin][6];
 		this.lowerLims = new String[lowerLims][7];
 		this.upperLims = new String[upperLims][7];
-		
+
 		this.reStream();
 		this.fillArrays();
 	}
-	
+
 	public void fillArrays() {
 		String inp;
 		int currentModel = 0;
 		int i = 0;
-		
+
 		while (this.pdbStream.hasNext()) {
 			inp = this.pdbStream.next();
 			if (inp.equals("MODEL")) {
@@ -143,14 +143,14 @@ public class AtomCalculator {
 				this.atoms[currentModel][i][5] = this.pdbStream.next();
 				i++;
 			}
-			
+
 			inp = this.pdbStream.nextLine();
 		}
-		
+
 		i = 0;
 		while (this.lolStream.hasNext()) {
 			inp = this.lolStream.next();
-			
+
 			if (!inp.substring(0, 1).equals("#")) {
 				this.lowerLims[i][0] = inp;
 				this.lowerLims[i][1] = this.lolStream.next();
@@ -163,11 +163,11 @@ public class AtomCalculator {
 			}
 			inp = this.lolStream.nextLine();
 		}
-		
+
 		i = 0;
 		while (this.uplStream.hasNext()) {
 			inp = this.uplStream.next();
-			
+
 			if (!inp.substring(0, 1).equals("#")) {
 				this.upperLims[i][0] = inp;
 				this.upperLims[i][1] = this.uplStream.next();
@@ -180,11 +180,11 @@ public class AtomCalculator {
 			}
 			inp = this.uplStream.nextLine();
 		}
-		
+
 		this.reStream();
 		this.runLims();
 	}
-	
+
 	public double calcDist(int i, int res1Num, String res1, String atom1,
 			int res2Num, String res2, String atom2) {
 		double x1 = 0;
@@ -194,7 +194,7 @@ public class AtomCalculator {
 		double y2 = 0;
 		double z2 = 0;
 		double dist = 0.0;
-		
+
 		for (int j = 0; j < atoms[0].length; j++) { // running through the list
 			// of atoms
 			if (atoms[i][j][0] != null) {
@@ -231,20 +231,20 @@ public class AtomCalculator {
 		}
 		dist = (Math.sqrt(Math.abs(Math.pow((x1 - x2), 2)
 				+ Math.pow((y1 - y2), 2) + Math.pow((z1 - z2), 2))));
-		
+
 		return dist;
 	}
-	
+
 	public void runLims() {
 		double[] distances = new double[pdbModels + 1];
 		String inp, res1 = null, res2 = null, atom1 = null, atom2 = null, lolimd = null, uplimd = null;
 		int res1num = 0, res2num = 0;
 		double totalDist = 0, avg = 0, stDevTemp = 0, stDev = 0;
 		boolean found = false;
-		
+
 		while (lolStream.hasNext()) {
 			inp = lolStream.next();
-			
+
 			if (!inp.substring(0, 1).equals("#")) {
 				res1num = Integer.parseInt(inp);
 				res1 = this.lolStream.next();
@@ -262,7 +262,7 @@ public class AtomCalculator {
 				for (int j = 0; j < pdbModels; j++) {
 					stDevTemp += Math.pow((distances[j] - avg), 2);
 				}
-				stDev = (Math.sqrt((stDevTemp) / (pdbModels + 1)));
+				stDev = (Math.sqrt((stDevTemp) / (pdbModels - 1)));
 				search: for (int j = 0; j < upperLims.length; j++) {
 					if (Integer.parseInt(upperLims[j][0]) == res1num) {
 						if (Integer.parseInt(upperLims[j][3]) == res2num) {
@@ -288,13 +288,13 @@ public class AtomCalculator {
 			avg = 0.0;
 			totalDist = 0.0;
 		}
-		
+
 		found = false;
 		stDev = 0.0;
 		stDevTemp = 0.0;
 		avg = 0.0;
 		totalDist = 0.0;
-		
+
 		while (this.uplStream.hasNext()) {
 			inp = this.uplStream.next();
 			if (!inp.substring(0, 1).equals("#")) {
@@ -341,16 +341,16 @@ public class AtomCalculator {
 			totalDist = 0.0;
 			uplimd = "";
 		}
-		
+
 		this.writeOut();
-		
+
 		this.pdbStream.close();
 		this.lolStream.close();
 		this.uplStream.close();
-		
+
 		System.out.println("blah");
 	}
-	
+
 	public void addOutput(int r1n, String r1, String a1, int r2n, String r2,
 			String a2, String lolim, String uplim, double avg, double stDev) {
 		NumberFormat df = new DecimalFormat("#########.##");
@@ -358,15 +358,15 @@ public class AtomCalculator {
 				+ " " + lolim + " " + uplim + " " + df.format(avg) + " "
 				+ df.format(stDev));
 	}
-	
+
 	public void writeOut() {
 		for (int i = 0; i < output.size(); i++) {
 			this.outStream.write(output.get(i) + "\n");
 		}
 		outStream.close();
-		
+
 		JOptionPane.showMessageDialog(swinger, "Wrote output to " + outFile);
-		
+
 		this.swinger.dispose();
 	}
 }
